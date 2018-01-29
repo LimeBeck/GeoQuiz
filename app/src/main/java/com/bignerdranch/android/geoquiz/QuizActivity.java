@@ -1,5 +1,6 @@
 package com.bignerdranch.android.geoquiz;
 
+import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -17,6 +18,7 @@ public class QuizActivity extends AppCompatActivity {
 
     private Button mTrueButton;
     private Button mFalseButton;
+    private Button mCheatButton;
     private ImageButton mNextButton;
     private ImageButton mPrevButton;
     private TextView mQuestionTextView;
@@ -78,6 +80,15 @@ public class QuizActivity extends AppCompatActivity {
                 updateQuestion();
             }
         });
+        mCheatButton = (Button) findViewById(R.id.cheat_button);
+        mCheatButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                //Start Cheat Activity
+                Intent intent = new Intent(QuizActivity.this, CheatActivity.class);
+                startActivity(intent);
+            }
+        });
     }
 
     @Override
@@ -119,6 +130,7 @@ public class QuizActivity extends AppCompatActivity {
     }
 
     private void updateQuestion() {
+        //Log.i(TAG, "Updating question text", new Exception());
         int question = mQuestionBank[mCurrentIndex].getTextResId();
         mQuestionTextView.setText(question);
         // mTrueButton.setEnabled(true);
@@ -149,8 +161,9 @@ public class QuizActivity extends AppCompatActivity {
         } else {
             messageResId = R.string.incorrect_toast;
         }
-        Toast.makeText(this, messageResId, Toast.LENGTH_SHORT).show();
         mQuestionBank[mCurrentIndex].setAnswered(true);
+        updateQuestion();
+        Toast.makeText(this, messageResId, Toast.LENGTH_SHORT).show();
         if (mAnswers == mQuestionBank.length) {
             TextView mScoreTextView = findViewById(R.id.score);
             mScoreTextView.setText("Your score:" + mTrueAnswers + " of " + mAnswers);
