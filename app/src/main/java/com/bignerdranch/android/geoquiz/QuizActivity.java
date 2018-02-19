@@ -14,12 +14,17 @@ import android.widget.Toast;
 
 public class QuizActivity extends AppCompatActivity {
 
+    //Тэг для поиска отладочной информации
     private static final String TAG = "QuizActivity";
+    //Ключ для сохранения информации об номере вопроса при повороте экрана и переходе между активностями
     private static final String KEY_INDEX = "index";
+    //ключ для передачи данных о подсмотре вопроса между активностями
     private static final String KEY_CHEATER = "cheater";
     private static final String KEY_QUESTIONS = "questions";
+    //Код возврата данных из другой активности
     private static final int REQUEST_CODE_CHEAT = 0;
 
+    //Описываем кнопки и тексты
     private Button mTrueButton;
     private Button mFalseButton;
     private Button mCheatButton;
@@ -29,6 +34,7 @@ public class QuizActivity extends AppCompatActivity {
     private int mAnswers = 0;
     private int mTrueAnswers = 0;
 
+    //Инициализируем массив вопросов
     private Question[] mQuestionBank = new Question[]{new Question(R.string.question_australia, true),
             new Question(R.string.question_oceans, true),
             new Question(R.string.question_mideast, false),
@@ -39,22 +45,30 @@ public class QuizActivity extends AppCompatActivity {
     private int mCurrentIndex = 0;
     private boolean mIsCheater;
 
+    //Переопределяем метод вызываемый при создании активности
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        //Собственно создание активности
         super.onCreate(savedInstanceState);
+        //Выводим информацию в лог
         Log.d(TAG, "onCreate(Bundle) called");
+        //Задаём вызываемую разметку активности
         setContentView(R.layout.activity_quiz);
 
+        //Если активность была открыта ранее, получаем индекс вопроса и узнаём, был ли подсмотрен ответ
         if (savedInstanceState != null) {
             mCurrentIndex = savedInstanceState.getInt(KEY_INDEX, 0);
             mIsCheater = savedInstanceState.getBoolean(KEY_CHEATER, false);
 
         }
 
+        //Связываем переменную с текстовым полем в активности
         mQuestionTextView = (TextView) findViewById(R.id.question_text_view);
 
 
+        //Аналогично для кнопок
         mTrueButton = (Button) findViewById(R.id.true_button);
+        //Задаём слушателя кнопки, т.е. реакцию на нажатие
         mTrueButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -69,11 +83,13 @@ public class QuizActivity extends AppCompatActivity {
                 checkAnswer(false);
             }
         });
+        //Обновляем вывод вопроса
         updateQuestion();
         mNextButton = (ImageButton) findViewById(R.id.next_button);
         mNextButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                //Номер вопроса +1, переходим дальше и обновляем экран
                 mCurrentIndex = (mCurrentIndex + 1) % mQuestionBank.length;
                 mIsCheater = false;
                 updateQuestion();
@@ -83,6 +99,7 @@ public class QuizActivity extends AppCompatActivity {
         mPrevButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                //То же, только переходим назад
                 mCurrentIndex = (mCurrentIndex - 1) % mQuestionBank.length;
                 if (mCurrentIndex < 0) mCurrentIndex = mQuestionBank.length - 1;
                 updateQuestion();
@@ -92,16 +109,17 @@ public class QuizActivity extends AppCompatActivity {
         mCheatButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                //Start Cheat Activity
-                //Intent intent = new Intent(QuizActivity.this, CheatActivity.class);
+                //Задаём переменную с верным ответом
                 boolean answerIsTrue = mQuestionBank[mCurrentIndex].isAnswerTrue();
+                //Задаём новую активность
                 Intent intent = CheatActivity.newIntent(QuizActivity.this, answerIsTrue);
-                //startActivity(intent);
+                //Вызываем новую активность с возвратом результата
                 startActivityForResult(intent, REQUEST_CODE_CHEAT);
             }
         });
     }
 
+    //Переопределяем метод, вызываемый при возврате активностью CheatActivity результата
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (resultCode != Activity.RESULT_OK) {
@@ -115,6 +133,7 @@ public class QuizActivity extends AppCompatActivity {
         }
     }
 
+    //Просто куча переопределений с выводом действий в лог
     @Override
     public void onStart() {
         super.onStart();
@@ -146,6 +165,7 @@ public class QuizActivity extends AppCompatActivity {
         Log.i(TAG, "onDestroy() called");
     }
 
+    //Сохранение данных при уничтожении активности (при повороте экрана, например)
     @Override
     public void onSaveInstanceState(Bundle savedInstanceState) {
         super.onSaveInstanceState(savedInstanceState);
@@ -154,19 +174,20 @@ public class QuizActivity extends AppCompatActivity {
         savedInstanceState.putBoolean(KEY_CHEATER, mIsCheater);
     }
 
+    //Метод обновления данных вопроса на экране
     private void updateQuestion() {
-        //Log.i(TAG, "Updating question text", new Exception());
+        //Получаем идентификатор такста вопроса
         int question = mQuestionBank[mCurrentIndex].getTextResId();
+        //Задаём этот текст
         mQuestionTextView.setText(question);
-        // mTrueButton.setEnabled(true);
-        // mFalseButton.setEnabled(true);
+
+        //ПРоверяем, если вопрос был отвечен, то блокируем кнопки
         if (mQuestionBank[mCurrentIndex].isAnswered()) {
             mTrueButton.setEnabled(false);
             mFalseButton.setEnabled(false);
         }
         try {
             if (!mQuestionBank[mCurrentIndex].isAnswered()) {
-                //Log.i(TAG,"Try to enable buttons");
                 mTrueButton.setEnabled(true);
                 mFalseButton.setEnabled(true);
             }
@@ -176,8 +197,11 @@ public class QuizActivity extends AppCompatActivity {
 
     }
 
+    //Метод для проверки на читера
     private void checkAnswer(boolean userPressedTrue) {
+        //Получаем правильный ответ
         boolean answerIsTrue = mQuestionBank[mCurrentIndex].isAnswerTrue();
+        //Задаём варианты всплывающего сообщения
         int messageResId = 0;
         if (mIsCheater) {
             messageResId = R.string.judgment_toast;
@@ -189,10 +213,15 @@ public class QuizActivity extends AppCompatActivity {
                 messageResId = R.string.incorrect_toast;
             }
         }
+        //Запоминаем количество отвеченных вопросов
         mAnswers += 1;
+        //Отмечаем вопрос отвеченным
         mQuestionBank[mCurrentIndex].setAnswered(true);
+        //Обновляем экран
         updateQuestion();
+        //Выводим сообщение
         Toast.makeText(this, messageResId, Toast.LENGTH_SHORT).show();
+        //Если отвечены все вопросы - выводим строку с итогами
         if (mAnswers == mQuestionBank.length) {
             TextView mScoreTextView = findViewById(R.id.score);
             mScoreTextView.setText("Your score:" + mTrueAnswers + " of " + mAnswers);
